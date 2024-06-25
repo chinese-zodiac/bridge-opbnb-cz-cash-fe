@@ -19,6 +19,7 @@ import { HiSwitchHorizontal } from "react-icons/hi";
 import metamask from "../assets/images/metamask.svg";
 import Web3 from "web3";
 import TOKEN_LIST from "../tokenlist";
+import BalanceDisplay from "./BalanceDisplay";
 const optimismSDK = require("@eth-optimism/sdk");
 const ethers = require("ethers");
 
@@ -70,19 +71,6 @@ const Deposit = () => {
 
   const { data } = useBalance({
     address: address,
-    watch: true,
-    chainId: Number(process.env.REACT_APP_L1_CHAIN_ID),
-  });
-
-  const dataUSDT = useBalance({
-    address: address,
-    token: TOKEN_LIST.find((t) => t.tokenSymbol == "USDT").l1Address,
-    watch: true,
-    chainId: Number(process.env.REACT_APP_L1_CHAIN_ID),
-  });
-  const dataBTCB = useBalance({
-    address: address,
-    token: TOKEN_LIST.find((t) => t.tokenSymbol == "BTCB").l1Address,
     watch: true,
     chainId: Number(process.env.REACT_APP_L1_CHAIN_ID),
   });
@@ -140,7 +128,6 @@ const Deposit = () => {
             bedrock: true,
           });
           if (sendToken === "BNB") {
-            console.log(sendToken);
             const weiValue = parseInt(
               ethers.utils.parseEther(ethValue)._hex,
               16
@@ -155,44 +142,26 @@ const Deposit = () => {
               setEthValue("");
             }
           }
-          if (sendToken === "USDT") {
-            var usdtValue = parseInt(ethValue * 1000000);
+          if (sendToken != "BNB") {
+            const token = TOKEN_LIST.find((t) => t.tokenSymbol == sendToken);
+            var tokenValue = parseInt(
+              ethers.utils.parseUnits(ethValue)._hex,
+              token.decimalValue
+            );
             setLoader(true);
-            const token = TOKEN_LIST.find((t) => t.tokenSymbol == "USDT");
             var depositTxn1 = await crossChainMessenger.approveERC20(
               token.l1Address,
               token.l2Address,
-              usdtValue
+              tokenValue
             );
             await depositTxn1.wait();
-            var receiptUSDT = await crossChainMessenger.depositERC20(
+            var receiptToken = await crossChainMessenger.depositERC20(
               token.l1Address,
               token.l2Address,
-              usdtValue
+              tokenValue
             );
-            var getReceiptUSDT = await receiptUSDT.wait();
-            if (getReceiptUSDT) {
-              setLoader(false);
-              setEthValue("");
-            }
-          }
-          if (sendToken === "BTCB") {
-            var BTCBValue = parseInt(ethValue * 100000000);
-            setLoader(true);
-            const token = TOKEN_LIST.find((t) => t.tokenSymbol == "BTCB");
-            var depositTxnBtc = await crossChainMessenger.approveERC20(
-              token.l1Address,
-              token.l2Address,
-              BTCBValue
-            );
-            await depositTxnBtc.wait();
-            var receiptBTCB = await crossChainMessenger.depositERC20(
-              token.l1Address,
-              token.l2Address,
-              BTCBValue
-            );
-            var getReceiptBTCB = await receiptBTCB.wait();
-            if (getReceiptBTCB) {
+            var getReceiptToken = await receiptToken.wait();
+            if (getReceiptToken) {
               setLoader(false);
               setEthValue("");
             }
@@ -208,34 +177,14 @@ const Deposit = () => {
   const handleChange = (e) => {
     if (sendToken == "BNB") {
       if (Number(data?.formatted) < e.target.value) {
-        setErrorInput("Insufficient BNB balance.");
+        setErrorInput("Insufficient " + sendToken + " balance.");
         setCheckDisabled(true);
       } else {
         setCheckDisabled(false);
         setErrorInput("");
       }
-      setEthValue(e.target.value);
     }
-    if (sendToken == "USDT") {
-      if (Number(dataUSDT.data?.formatted) < e.target.value) {
-        setErrorInput("Insufficient USDT balance.");
-        setCheckDisabled(true);
-      } else {
-        setCheckDisabled(false);
-        setErrorInput("");
-      }
-      setEthValue(e.target.value);
-    }
-    if (sendToken == "BTCB") {
-      if (Number(dataBTCB.data?.formatted) < e.target.value) {
-        setErrorInput("Insufficient BTCB balance.");
-        setCheckDisabled(true);
-      } else {
-        setCheckDisabled(false);
-        setErrorInput("");
-      }
-      setEthValue(e.target.value);
-    }
+    setEthValue(e.target.value);
   };
 
   return (
@@ -247,7 +196,7 @@ const Deposit = () => {
             <div className="deposit_price_title">
               <p>From</p>
               <h5>
-                <FaEthereum /> BSC
+                <Image src="./token/BNB.svg" alt="To icn" fluid /> BSC
               </h5>
             </div>
             <div className="deposit_input_wrap">
@@ -267,51 +216,53 @@ const Deposit = () => {
                     onChange={({ target }) => setSendToken(target.value)}
                   >
                     <option>BNB</option>
-                    <option value="USDT">USDT</option>
-                    <option value="BTCB">BTCB</option>
+                    {TOKEN_LIST.map((token) => (
+                      <option value={token.tokenSymbol}>
+                        {token.tokenSymbol}
+                      </option>
+                    ))}
                   </Form.Select>
                 </div>
-                <div className="input_icn_wrap">
-                  {sendToken == "BNB" ? (
-                    <span className="input_icn">
-                      <Ethereum style={{ fontSize: "1.5rem" }} />
-                    </span>
-                  ) : sendToken == "USDT" ? (
-                    <span className="input_icn">
-                      <Usdt style={{ fontSize: "1.5rem" }} />
-                    </span>
-                  ) : sendToken == "BTCB" ? (
-                    <span className="input_icn">
-                      <Btc style={{ fontSize: "1.5rem" }} />
-                    </span>
-                  ) : (
-                    <span className="input_icn">
-                      <Usdc style={{ fontSize: "1.5rem" }} />
-                    </span>
-                  )}
-                </div>
+                {
+                  <div className="input_icn_wrap">
+                    {sendToken == "BNB" ? (
+                      <span className="input_icn">
+                        <Image src="./token/BNB.svg" alt="To icn" fluid />
+                      </span>
+                    ) : (
+                      <span className="input_icn">
+                        <Image
+                          src={
+                            "./token/" +
+                            TOKEN_LIST.find((t) => t.tokenSymbol == sendToken)
+                              .logo
+                          }
+                          alt="To icn"
+                          fluid
+                        />
+                      </span>
+                    )}
+                  </div>
+                }
               </Form>
             </div>
             {errorInput && <small className="text-danger">{errorInput}</small>}
-            {sendToken == "BNB"
-              ? address && (
-                  <p className="wallet_bal mt-2">
-                    Balance: {Number(data?.formatted).toFixed(5)} BNB
-                  </p>
-                )
-              : sendToken == "USDT"
-              ? address && (
-                  <p className="wallet_bal mt-2">
-                    Balance: {Number(dataUSDT.data?.formatted).toFixed(5)} USDT
-                  </p>
-                )
-              : sendToken == "BTCB"
-              ? address && (
-                  <p className="wallet_bal mt-2">
-                    Balance: {Number(dataBTCB.data?.formatted).toFixed(5)} BTCB
-                  </p>
-                )
-              : address && <p className="wallet_bal mt-2">Balance: 0 USDC</p>}
+            {sendToken == "BNB" ? (
+              address && (
+                <p className="wallet_bal mt-2">
+                  Balance: {Number(data?.formatted).toFixed(5)} BNB
+                </p>
+              )
+            ) : (
+              <BalanceDisplay
+                token={TOKEN_LIST.find((t) => t.tokenSymbol == sendToken)}
+                address={address}
+                chainID={process.env.REACT_APP_L1_CHAIN_ID}
+                ethValue={ethValue}
+                setErrorInput={setErrorInput}
+                setCheckDisabled={setCheckDisabled}
+              />
+            )}
           </div>
           <div className="deposit_details_wrap">
             <div className="deposit_details">
@@ -324,22 +275,18 @@ const Deposit = () => {
               {sendToken == "BNB" ? (
                 <span className="input_icn">
                   {" "}
-                  <Ethereum style={{ fontSize: "1.5rem" }} />
-                </span>
-              ) : sendToken == "USDT" ? (
-                <span className="input_icn">
-                  {" "}
-                  <Usdt style={{ fontSize: "1.5rem" }} />
-                </span>
-              ) : sendToken == "BTCB" ? (
-                <span className="input_icn">
-                  {" "}
-                  <Btc style={{ fontSize: "1.5rem" }} />
+                  <Image src="./token/BNB.svg" alt="To icn" fluid />
                 </span>
               ) : (
                 <span className="input_icn">
                   {" "}
-                  <Usdc style={{ fontSize: "1.5rem" }} />
+                  <Image
+                    src={
+                      "./token/" +
+                      TOKEN_LIST.find((t) => t.tokenSymbol == sendToken).logo
+                    }
+                    fluid
+                  />
                 </span>
               )}{" "}
               <p>
