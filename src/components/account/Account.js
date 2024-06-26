@@ -44,11 +44,20 @@ const Account = () => {
         )}
       </div>
       <div className="account_tabs">
-        deposit and withdraw tracking coming soon...
-        {/*<ul>
-                    <li><Link to="/account/deposit" className={`${location.pathname == "/account/deposit" ? "active" : ""}`}>Deposit</Link></li>
-                    <li><Link to="/account/withdraw" className={`${location.pathname == "/account/withdraw" ? "active" : ""}`}>Withdraw</Link></li>
-                </ul>*/}
+        deposit tracking coming soon...
+        <ul>
+          {/*<li><Link to="/account/deposit" className={`${location.pathname == "/account/deposit" ? "active" : ""}`}>Deposit</Link></li>*/}
+          <li>
+            <Link
+              to="/account/withdraw"
+              className={`${
+                location.pathname == "/account/withdraw" ? "active" : ""
+              }`}
+            >
+              Withdraw
+            </Link>
+          </li>
+        </ul>
       </div>
     </>
   );
