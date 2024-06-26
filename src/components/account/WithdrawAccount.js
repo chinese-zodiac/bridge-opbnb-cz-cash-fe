@@ -14,7 +14,7 @@ const WithdrawAccount = () => {
   const { chain } = useNetwork();
   const { switchNetwork } = useSwitchNetwork();
   const getCrossChain = async () => {
-    const l2Url = String(process.env.REACT_APP_L2_RPC_URL);
+    const l2Url = String(process.env.REACT_APP_L2_RPC_URL_ARCHIVAL);
     const l1Provider = new ethers.providers.Web3Provider(
       window.ethereum,
       "any"
@@ -62,7 +62,7 @@ const WithdrawAccount = () => {
   };
   const getWithdraw = async () => {
     const getCrossChainMessenger = await getCrossChain();
-    const l2Url = String(process.env.REACT_APP_L2_RPC_URL);
+    const l2Url = String(process.env.REACT_APP_L2_RPC_URL_ARCHIVAL);
     const l2Provider = new ethers.providers.JsonRpcProvider(l2Url);
     const data = await getCrossChainMessenger.getWithdrawalsByAddress(address);
     for (let index = 0; index < data.length; index++) {
@@ -167,8 +167,12 @@ const WithdrawAccount = () => {
 
   useEffect(() => {
     if (isConnected) {
-      if (chain.id !== process.env.REACT_APP_L2_CHAIN_ID) {
-        switchNetwork(process.env.REACT_APP_L2_CHAIN_ID);
+      console.log({ chain });
+      console.log(chain.id);
+      console.log(process.env.REACT_APP_L2_CHAIN_ID);
+      if (chain.id != process.env.REACT_APP_L2_CHAIN_ID) {
+        alert("Wrong Network. Connect to opBNB");
+        //switchNetwork(process.env.REACT_APP_L2_CHAIN_ID);
       } else {
         getWithdraw();
       }
@@ -266,7 +270,7 @@ const WithdrawAccount = () => {
                           <td>
                             {" "}
                             <a
-                              href={`https://testnet.racescan.io/tx/${transactionHash}`}
+                              href={`https://opbnbscan.com/tx/${transactionHash}`}
                               target="_blank"
                             >
                               {" "}

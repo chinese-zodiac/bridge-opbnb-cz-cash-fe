@@ -2,10 +2,7 @@ import React, { useEffect, useState } from "react";
 import "../assets/style/deposit.scss";
 import "../assets/style/withdraw.scss";
 import { Form, Image, Spinner } from "react-bootstrap";
-import { Dai, Usdt, Usdc, Ethereum, Btc } from "react-web3-icons";
 import { MdOutlineSecurity } from "react-icons/md";
-import { FaEthereum } from "react-icons/fa";
-import Web3 from "web3";
 import toIcn from "../assets/images/logo.png";
 import {
   useAccount,
@@ -20,11 +17,13 @@ import { HiSwitchHorizontal } from "react-icons/hi";
 import metamask from "../assets/images/metamask.svg";
 import TabMenu from "./TabMenu";
 import TOKEN_LIST from "../tokenlist";
+import BalanceDisplay from "./BalanceDisplay";
+import { parseUnits } from "viem";
 const optimismSDK = require("@eth-optimism/sdk");
 const ethers = require("ethers");
 const Withdraw = () => {
   const [ethValue, setEthValue] = useState("");
-  const [sendToken, setSendToken] = useState("ETH");
+  const [sendToken, setSendToken] = useState("BNB");
   const [errorInput, setErrorInput] = useState("");
   const [checkMetaMask, setCheckMetaMask] = useState("");
   const [loader, setLoader] = useState(false);
@@ -75,8 +74,8 @@ const Withdraw = () => {
                 rpcUrls: [process.env.REACT_APP_L2_RPC_URL],
                 chainName: process.env.REACT_APP_L2_NETWORK_NAME,
                 nativeCurrency: {
-                  name: "ETHEREUM",
-                  symbol: "ETH",
+                  name: "BNB",
+                  symbol: "BNB",
                   decimals: 18,
                 },
                 blockExplorerUrls: [process.env.REACT_APP_L2_EXPLORER_URL],
@@ -106,22 +105,6 @@ const Withdraw = () => {
     chainId: Number(process.env.REACT_APP_L2_CHAIN_ID),
     watch: true,
   });
-  const dataUSDT = useBalance({
-    address: address,
-    chainId: Number(process.env.REACT_APP_L2_CHAIN_ID),
-    token: process.env.REACT_APP_L2_USDT,
-    watch: true,
-  });
-  const dataBTCB = useBalance({
-    address: address,
-    chainId: Number(process.env.REACT_APP_L2_CHAIN_ID),
-    token: process.env.REACT_APP_L2_BTCB,
-    watch: true,
-  });
-
-  useEffect(() => {
-    console.log("dataUSDT", data);
-  }, []);
 
   ////========================================================== WITHDRAW =======================================================================
 
@@ -177,7 +160,7 @@ const Withdraw = () => {
           //-------------------------------------------------------- SEND TOKEN VALUE -----------------------------------------------------------------
 
           try {
-            if (sendToken == "ETH") {
+            if (sendToken === "BNB") {
               const weiValue = parseInt(
                 ethers.utils.parseEther(ethValue)._hex,
                 16
@@ -193,32 +176,17 @@ const Withdraw = () => {
               }
             }
 
-            if (sendToken == "USDT") {
-              var usdtValue = parseInt(ethValue * 1000000);
-              const token = TOKEN_LIST.find((t) => t.tokenSymbol == "USDT");
+            if (sendToken != "BNB") {
+              const token = TOKEN_LIST.find((t) => t.tokenSymbol == sendToken);
+              var tokenValue = parseUnits(ethValue, Number(token.decimalValue));
               setLoader(true);
-              var receiptUSDT = await crossChainMessenger.withdrawERC20(
+              var receiptToken = await crossChainMessenger.withdrawERC20(
                 token.l1Address,
                 token.l2Address,
-                usdtValue
+                tokenValue.toString()
               );
-              var getReceiptUSDT = await receiptUSDT.wait();
-              if (getReceiptUSDT) {
-                setLoader(false);
-                setEthValue("");
-              }
-            }
-            if (sendToken == "BTCB") {
-              var BTCBValue = parseInt(ethValue * 100000000);
-              const token = TOKEN_LIST.find((t) => t.tokenSymbol == "BTCB");
-              setLoader(true);
-              var receiptBTCB = await crossChainMessenger.withdrawERC20(
-                token.l1Address,
-                token.l2Address,
-                BTCBValue
-              );
-              var getReceiptBTCB = await receiptBTCB.wait();
-              if (getReceiptBTCB) {
+              var getReceiptToken = await receiptToken.wait();
+              if (getReceiptToken) {
                 setLoader(false);
                 setEthValue("");
               }
@@ -248,35 +216,15 @@ const Withdraw = () => {
 
   const handleChange = (e) => {
     if (sendToken == "BNB") {
-      if (Number(data?.formatted) < Number(e.target.value)) {
+      if (Number(data?.formatted) < e.target.value) {
+        setErrorInput("Insufficient " + sendToken + " balance.");
         setCheckDisabled(true);
-        setErrorInput("Insufficient BNB balance.");
       } else {
         setCheckDisabled(false);
         setErrorInput("");
       }
-      setEthValue(e.target.value);
     }
-    if (sendToken == "USDT") {
-      if (Number(dataUSDT.data?.formatted) < e.target.value) {
-        setCheckDisabled(true);
-        setErrorInput("Insufficient USDT balance.");
-      } else {
-        setCheckDisabled(false);
-        setErrorInput("");
-      }
-      setEthValue(e.target.value);
-    }
-    if (sendToken == "BTCB") {
-      if (Number(dataBTCB.data?.formatted) < e.target.value) {
-        setCheckDisabled(true);
-        setErrorInput("Insufficient BTCB balance.");
-      } else {
-        setCheckDisabled(false);
-        setErrorInput("");
-      }
-      setEthValue(e.target.value);
-    }
+    setEthValue(e.target.value);
   };
 
   // ============= For Format balance =========================
@@ -310,7 +258,7 @@ const Withdraw = () => {
             <div className="withdraw_title_content">
               <h3>Use the official bridge</h3>
               <p>This usually takes 7 days</p>
-              <p>Bridge any token to Ethereum Mainnet</p>
+              <p>Bridge any token to BSC</p>
             </div>
           </div>
           <div className="deposit_price_wrap">
@@ -338,30 +286,29 @@ const Withdraw = () => {
                     onChange={({ target }) => setSendToken(target.value)}
                   >
                     <option>BNB</option>
-                    <option value="USDT">USDT</option>
-                    <option value="BTCB">BTCB</option>
+                    {TOKEN_LIST.map((token) => (
+                      <option key={token.tokenSymbol} value={token.tokenSymbol}>
+                        {token.tokenSymbol}
+                      </option>
+                    ))}
                   </Form.Select>
                 </div>
                 <div className="input_icn_wrap">
                   {sendToken == "BNB" ? (
                     <span className="input_icn">
-                      <Ethereum style={{ fontSize: "1.5rem" }} />
-                    </span>
-                  ) : sendToken == "DAI" ? (
-                    <span className="input_icn">
-                      <Dai style={{ fontSize: "1.5rem" }} />
-                    </span>
-                  ) : sendToken == "USDT" ? (
-                    <span className="input_icn">
-                      <Usdt style={{ fontSize: "1.5rem" }} />
-                    </span>
-                  ) : sendToken == "BTCB" ? (
-                    <span className="input_icn">
-                      <Btc style={{ fontSize: "1.5rem" }} />
+                      <Image src="./token/BNB.svg" alt="To icn" fluid />
                     </span>
                   ) : (
                     <span className="input_icn">
-                      <Usdc style={{ fontSize: "1.5rem" }} />
+                      <Image
+                        src={
+                          "./token/" +
+                          TOKEN_LIST.find((t) => t.tokenSymbol == sendToken)
+                            .logo
+                        }
+                        alt="To icn"
+                        fluid
+                      />
                     </span>
                   )}
                 </div>
@@ -374,49 +321,42 @@ const Withdraw = () => {
                   Balance: {Number(data?.formatted).toFixed(5)} BNB
                 </p>
               )
-            ) : sendToken === "DAI" ? (
-              address && <p className="wallet_bal mt-2">Balance: 0 DAI</p>
-            ) : sendToken == "USDT" ? (
-              address && (
-                <p className="wallet_bal mt-2">
-                  Balance: {Number(dataUSDT.data?.formatted).toFixed(5)} USDT
-                </p>
-              )
-            ) : sendToken === "BTCB" ? (
-              address && (
-                <p className="wallet_bal mt-2">
-                  Balance: {Number(dataBTCB.data?.formatted).toFixed(5)} BTCB
-                </p>
-              )
             ) : (
-              <p className="wallet_bal mt-2">Balance: 0 USDC</p>
+              <BalanceDisplay
+                token={TOKEN_LIST.find((t) => t.tokenSymbol == sendToken)}
+                address={address}
+                chainID={process.env.REACT_APP_L2_CHAIN_ID}
+                ethValue={ethValue}
+                setErrorInput={setErrorInput}
+                setCheckDisabled={setCheckDisabled}
+              />
             )}
           </div>
           <div className="deposit_details_wrap">
             <div className="deposit_details">
               <p>To:</p>
               <h5>
-                <FaEthereum /> BSC
+                <Image src="./token/BNB.svg" alt="To icn" fluid /> BSC
               </h5>
             </div>
             <div className="withdraw_bal_sum">
               {sendToken == "BNB" ? (
                 <span className="input_icn">
-                  <Ethereum style={{ fontSize: "1.5rem" }} />
-                </span>
-              ) : sendToken == "USDT" ? (
-                <span className="input_icn">
-                  <Usdt style={{ fontSize: "1.5rem" }} />
-                </span>
-              ) : sendToken == "BTCB" ? (
-                <span className="input_icn">
-                  <Btc style={{ fontSize: "1.5rem" }} />
+                  {" "}
+                  <Image src="./token/BNB.svg" alt="To icn" fluid />
                 </span>
               ) : (
                 <span className="input_icn">
-                  <Usdc style={{ fontSize: "1.5rem" }} />
+                  {" "}
+                  <Image
+                    src={
+                      "./token/" +
+                      TOKEN_LIST.find((t) => t.tokenSymbol == sendToken).logo
+                    }
+                    fluid
+                  />
                 </span>
-              )}
+              )}{" "}
               <p>
                 You’ll receive: {ethValue ? ethValue : "0"} {sendToken}
               </p>

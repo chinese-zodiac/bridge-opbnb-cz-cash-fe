@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react";
 import "../assets/style/deposit.scss";
 import { Form, Spinner, Image } from "react-bootstrap";
-import { Dai, Usdc, Usdt, Ethereum, Btc } from "react-web3-icons";
 import toIcn from "../assets/images/logo.png";
 import { IoMdWallet } from "react-icons/io";
-import { FaEthereum } from "react-icons/fa";
 import {
   useAccount,
   useConnect,
@@ -20,6 +18,7 @@ import metamask from "../assets/images/metamask.svg";
 import Web3 from "web3";
 import TOKEN_LIST from "../tokenlist";
 import BalanceDisplay from "./BalanceDisplay";
+import { formatUnits, parseUnits } from "viem";
 const optimismSDK = require("@eth-optimism/sdk");
 const ethers = require("ethers");
 
@@ -84,6 +83,7 @@ const Deposit = () => {
       if (!ethValue) {
         setErrorInput("Please enter the amount");
       } else {
+        console.log({ ethValue });
         if (!parseFloat(ethValue) > 0) {
           setErrorInput("Invalid Amount Entered!");
         } else {
@@ -144,21 +144,21 @@ const Deposit = () => {
           }
           if (sendToken != "BNB") {
             const token = TOKEN_LIST.find((t) => t.tokenSymbol == sendToken);
-            var tokenValue = parseInt(
-              ethers.utils.parseUnits(ethValue)._hex,
-              token.decimalValue
-            );
+            var tokenValue = parseUnits(ethValue, Number(token.decimalValue));
+            console.log({ ethValue });
+            console.log({ ethValue });
+            console.log(tokenValue.toString());
             setLoader(true);
             var depositTxn1 = await crossChainMessenger.approveERC20(
               token.l1Address,
               token.l2Address,
-              tokenValue
+              tokenValue.toString()
             );
             await depositTxn1.wait();
             var receiptToken = await crossChainMessenger.depositERC20(
               token.l1Address,
               token.l2Address,
-              tokenValue
+              tokenValue.toString()
             );
             var getReceiptToken = await receiptToken.wait();
             if (getReceiptToken) {
@@ -217,7 +217,7 @@ const Deposit = () => {
                   >
                     <option>BNB</option>
                     {TOKEN_LIST.map((token) => (
-                      <option value={token.tokenSymbol}>
+                      <option key={token.tokenSymbol} value={token.tokenSymbol}>
                         {token.tokenSymbol}
                       </option>
                     ))}

@@ -78,6 +78,7 @@ const HeaderNew = () => {
           <Container fluid>
             <Link to="/" className="app_logo">
               <Image src={logo} alt="logo" fluid />
+              BRIDGE.CZ.CASH
             </Link>
             <Navbar.Toggle aria-controls="navbarScroll" />
             <Navbar.Collapse id="navbarScroll">
@@ -148,12 +149,20 @@ const HeaderNew = () => {
                             </OverlayTrigger>
                           </h4>
                         </div>
+                        <Dropdown.Item>
+                          deposit/withdraw tracking
+                          <br />
+                          under construction
+                        </Dropdown.Item>
+                        {/*
                         <Dropdown.Item as={Link} to="/account/deposit">
                           <AiOutlineDownload /> View Deposit
                         </Dropdown.Item>
                         <Dropdown.Item as={Link} to="/account/withdraw">
                           <AiOutlineUpload /> View Withdrawals
                         </Dropdown.Item>
+
+                        */}
                         <Dropdown.Item onClick={() => handleDisconnect()}>
                           <BiPowerOff /> Disconnect
                         </Dropdown.Item>
