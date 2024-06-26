@@ -104,17 +104,17 @@ const WithdrawAccount = () => {
     }
     const getNewWithdrawals = data.map((object) => {
       if (object.messageStatus == 6) {
-        return { ...object, message: "Completed" };
+        return { ...object, readableStatus: "Completed" };
       } else if (object.messageStatus == 3) {
-        return { ...object, message: "Ready to Prove" };
+        return { ...object, readableStatus: "Ready to Prove" };
       } else if (object.messageStatus == 5) {
-        return { ...object, message: "Claim Withdrawal" };
+        return { ...object, readableStatus: "Claim Withdrawal" };
       } else if (object.messageStatus == 2) {
-        return { ...object, message: "Waiting for Confirmation" };
+        return { ...object, readableStatus: "Waiting for Confirmation" };
       } else if (object.messageStatus == 4) {
-        return { ...object, message: "In challenge Period" };
+        return { ...object, readableStatus: "In challenge Period" };
       } else {
-        return { ...object, message: null };
+        return { ...object, readableStatus: null };
       }
     });
     setWithdrawDetails(getNewWithdrawals);
@@ -150,11 +150,11 @@ const WithdrawAccount = () => {
   }
 
   const handleProve = async (event, transactionHash) => {
-    console.log({ transactionHash });
+    const getCrossChainMessenger = await getCrossChain();
     try {
       const index = event.target.getAttribute("data-value");
       setLoader(index);
-      const getCrossChainMessenger = await getCrossChain();
+
       const response = await getCrossChainMessenger.proveMessage(
         transactionHash
       );
@@ -246,7 +246,7 @@ const WithdrawAccount = () => {
     setItemOffsetCollections(newOffsetCollections);
   };
   // =============all Collections pagination end===============
-  console.log("withdrawDetails", { currentItemsCollections, withdrawDetails });
+  //console.log("withdrawDetails", { currentItemsCollections, withdrawDetails });
   return (
     <>
       <div className="account_wrap">
@@ -283,13 +283,12 @@ const WithdrawAccount = () => {
                     {currentItemsCollections.map((element, index) => {
                       const {
                         timestamp,
-                        message,
+                        readableStatus,
                         transactionHash,
                         amount,
                         messageStatus,
                         l2Token,
                       } = element;
-                      console.log("message", messageStatus);
                       return (
                         <tr key={index}>
                           <td>{timeConverter(timestamp)}</td>
@@ -322,7 +321,7 @@ const WithdrawAccount = () => {
                             </a>
                           </td>
                           <td>
-                            {message}{" "}
+                            {readableStatus}{" "}
                             {messageStatus === 3 ? (
                               index == loader ? (
                                 <button
