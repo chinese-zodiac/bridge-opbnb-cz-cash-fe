@@ -29,8 +29,12 @@ const WithdrawAccount = () => {
   const { blocksScanned, setBlocksScanned } = useState(0);
   const getCrossChain = async () => {
     const l2Url = String(process.env.REACT_APP_L2_RPC_URL);
-    const l1Provider = new ethers.providers.Web3Provider(window.ethereum);
+    const l1Provider = new ethers.providers.Web3Provider(
+      window.ethereum,
+      "any"
+    );
     const l2Provider = new ethers.providers.JsonRpcProvider(l2Url);
+    console.log({ address });
     const l1Signer = l1Provider.getSigner(address);
     const l2Signer = l2Provider.getSigner(address);
     const zeroAddr = "0x".padEnd(42, "0");
@@ -69,7 +73,53 @@ const WithdrawAccount = () => {
       l2SignerOrProvider: l2Signer,
       bedrock: true,
     });
+    crossChainMessenger.getMessageBedrockOutput = async (message) => {
+      const resolved = await crossChainMessenger.toCrossChainMessage(message);
 
+      // Outputs are only a thing for L2 to L1 messages.
+      if (resolved.direction === 0) {
+        throw new Error(`cannot get a state root for an L1 to L2 message`);
+      }
+
+      // Try to find the output index that corresponds to the block number attached to the message.
+      // We'll explicitly handle "cannot get output" errors as a null return value, but anything else
+      // needs to get thrown. Might need to revisit this in the future to be a little more robust
+      // when connected to RPCs that don't return nice error messages.
+      let l2OutputIndex;
+      console.log("blocknum", resolved.blockNumber);
+
+      try {
+        //use latest output index for opBNB (otherwise get missing trie error)
+        l2OutputIndex =
+          await crossChainMessenger.contracts.l1.L2OutputOracle.latestOutputIndex();
+        /*await crossChainMessenger.contracts.l1.L2OutputOracle.getL2OutputIndexAfter(
+            resolved.blockNumber
+          );*/
+      } catch (err) {
+        if (err.message.includes("L2OutputOracle: cannot get output")) {
+          return null;
+        } else {
+          throw err;
+        }
+      }
+      console.log("l2OutputIndex", l2OutputIndex.toNumber());
+
+      // Now pull the proposal out given the output index. Should always work as long as the above
+      // codepath completed successfully.
+      const proposal =
+        await crossChainMessenger.contracts.l1.L2OutputOracle.getL2Output(
+          l2OutputIndex
+        );
+      console.log("l2BlockNumber", proposal.l2BlockNumber.toNumber());
+
+      // Format everything and return it nicely.
+      return {
+        outputRoot: proposal.outputRoot,
+        l1Timestamp: proposal.timestamp.toNumber(),
+        l2BlockNumber: proposal.l2BlockNumber.toNumber(),
+        l2OutputIndex: l2OutputIndex.toNumber(),
+      };
+    };
     return crossChainMessenger;
   };
   const getWithdraw = async () => {
@@ -150,11 +200,17 @@ const WithdrawAccount = () => {
   }
 
   const handleProve = async (event, transactionHash) => {
-    const getCrossChainMessenger = await getCrossChain();
+    console.log("handleProve");
     try {
       const index = event.target.getAttribute("data-value");
       setLoader(index);
 
+      const getCrossChainMessenger = await getCrossChain();
+      console.log("attempting provemessage...");
+
+      const bedrockMessageProof =
+        await getCrossChainMessenger.getBedrockMessageProof(transactionHash);
+      console.log({ bedrockMessageProof });
       const response = await getCrossChainMessenger.proveMessage(
         transactionHash
       );
@@ -166,10 +222,9 @@ const WithdrawAccount = () => {
         setLoader(NaN);
       }
     } catch (error) {
-      console.log({ error });
       if (error.code === "ACTION_REJECTED") {
       } else {
-        alert("error, check console");
+        console.log({ error });
       }
       setLoader(NaN);
     }
@@ -206,7 +261,7 @@ const WithdrawAccount = () => {
         getWithdraw();
       }
     }
-  }, [chain, address]);
+  }, [chain.id, address]);
   // =============all Collections pagination start===============
   const [currentItemsCollections, setCurrentItemsCollections] = useState([]);
   const [pageCountCollections, setPageCountCollections] = useState(0);
