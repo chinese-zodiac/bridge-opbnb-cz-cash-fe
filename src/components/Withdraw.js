@@ -256,9 +256,12 @@ const Withdraw = () => {
               <MdOutlineSecurity />
             </div>
             <div className="withdraw_title_content">
-              <h3>Use the official bridge</h3>
-              <p>This usually takes 7 days</p>
-              <p>Bridge any token to BSC</p>
+              <h3>USES OPTIMISM BRIDING</h3>
+              <p>This takes a minimum of 7 days.</p>
+              <p>
+                After you withdraw, wait 5 minutes and go to "proofs" to check
+                the status.
+              </p>
             </div>
           </div>
           <div className="deposit_price_wrap">
@@ -403,6 +406,11 @@ const Withdraw = () => {
                 )}
               </button>
             )}
+
+            <p className="white">
+              AFTER WITHDRAW, GO TO "PROOFS" AND COMPLETE THE PROOFS TO RECEIVE
+              TOKENS ON BSC.
+            </p>
           </div>
           {metaMastError && (
             <small className="d-block text-danger text-center mt-2">

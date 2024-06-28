@@ -54,7 +54,7 @@ const Account = () => {
                 location.pathname == "/account/withdraw" ? "active" : ""
               }`}
             >
-              Withdraw
+              Proofs
             </Link>
           </li>
         </ul>

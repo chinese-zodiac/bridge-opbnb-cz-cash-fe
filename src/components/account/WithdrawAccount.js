@@ -308,6 +308,14 @@ const WithdrawAccount = () => {
         <Container>
           <div className="account_inner_wrap">
             <Account />
+            <section>
+              <p className="white">
+                Be patient with proofs. Its 3 steps: first, after you did the
+                withdraw you need to sign a proof here. Second, the proof will
+                enter a 7 day challeng period. Third, after that period ends,
+                you can claim your tokens on BSC mainnet.
+              </p>
+            </section>
             <section className="account_withdraw_table">
               {!transactionLoader ? (
                 <>
