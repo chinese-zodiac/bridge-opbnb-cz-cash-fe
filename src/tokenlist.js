@@ -13,6 +13,13 @@ const TOKEN_LIST = [
     logo: "BTCB.svg",
     decimalValue: 18,
   },
+  {
+    l1Address: "0x02750CC334E96aeF8C8ad9b75f13F93EC2Aaeccd",
+    l2Address: "0x02750CC334E96aeF8C8ad9b75f13F93EC2Aaeccd",
+    tokenSymbol: "BONES",
+    logo: "BONES.svg",
+    decimalValue: 18,
+  },
 ];
 
 export default TOKEN_LIST;
